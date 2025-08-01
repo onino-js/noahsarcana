@@ -4,10 +4,17 @@
     <title>Noah's Arcana</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,  initial-scale=1.0" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css"
+    />
     <style>
       body {
         background-color: black;
         font-family: sans-serif; /* Ou une autre police de votre choix */
+        margin: 0;
       }
 
       h1 {
@@ -18,6 +25,12 @@
         animation: glow 2s infinite alternate; /* Animation pour un effet plus prononcé */
       }
 
+      h2,
+      h3 {
+        text-align: center;
+        color: white;
+      }
+
       @keyframes glow {
         from {
           text-shadow: 0 0 10px gold;
@@ -26,11 +39,286 @@
           text-shadow: 0 0 20px gold;
         }
       }
+      #bg {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: -1;
+      }
+
+      #audio-player {
+        margin: 50px auto;
+        width: 90%;
+        /* max-width: 600px; */
+        background-color: transparent;
+        border: none;
+        border-radius: 15px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: white;
+        /* backdrop-filter: blur(5px);
+        -webkit-backdrop-filter: blur(5px); */
+        z-index: 10;
+        font-family: sans-serif;
+      }
+
+      #track-artwork {
+        width: 1080px;
+        height: auto;
+        object-fit: cover;
+        border-radius: 10px;
+        margin-bottom: 15px;
+        border: none;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      }
+
+      #track-info {
+        text-align: center;
+        margin-bottom: 10px;
+        width: 100%;
+      }
+
+      #track-title {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: gold;
+        text-shadow: 0 0 5px gold;
+      }
+
+      #track-artist {
+        font-size: 0.9em;
+        color: #ddd;
+      }
+
+      #controls {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 15px;
+      }
+
+      #controls button {
+        background-color: transparent;
+        border: 2px solid gold;
+        color: gold;
+        border-radius: 50%; /* Makes the button round */
+        width: 70px; /* Sets a fixed width */
+        height: 70px; /* Sets a fixed height */
+        font-size: 2em;
+        cursor: pointer;
+        margin: 0 15px;
+        transition: background-color 0.3s, transform 0.2s;
+        display: flex; /* To center the icon inside */
+        align-items: center;
+        justify-content: center;
+        line-height: 1; /* Helps vertical alignment of some emojis */
+      }
+
+      #controls button:hover {
+        background-color: rgba(255, 215, 0, 0.1); /* Gold glow on hover */
+        transform: scale(1.1);
+      }
+
+      #progress-container {
+        width: 100%;
+        margin-bottom: 5px;
+        cursor: pointer;
+      }
+
+      #progress-bar-bg {
+        background-color: rgba(255, 255, 255, 0.2);
+        height: 5px;
+        border-radius: 2.5px;
+      }
+
+      #progress-bar {
+        background-color: gold;
+        height: 100%;
+        width: 0%;
+        border-radius: 2.5px;
+        box-shadow: 0 0 5px gold;
+      }
+
+      #time-container {
+        font-size: 0.8em;
+        width: 100%;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        color: #ddd;
+      }
+
+      #volume-container {
+        display: flex;
+        align-items: center;
+        width: 50%;
+        min-width: 150px;
+        justify-content: center;
+      }
+
+      #volume-icon {
+        font-size: 1.5em;
+        margin-right: 10px;
+        color: gold;
+        width: 1.5em; /* Reserve space to prevent layout shifts */
+        text-align: center;
+      }
+
+      #volume-slider {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 100%;
+        height: 5px;
+        background: rgba(255, 255, 255, 0.2);
+        outline: none;
+        border-radius: 2.5px;
+        transition: opacity 0.2s;
+      }
+
+      #volume-slider::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        appearance: none;
+        width: 15px;
+        height: 15px;
+        background: gold;
+        cursor: pointer;
+        border-radius: 50%;
+        box-shadow: 0 0 8px gold;
+      }
+
+      #volume-slider::-moz-range-thumb {
+        width: 15px;
+        height: 15px;
+        background: gold;
+        cursor: pointer;
+        border-radius: 50%;
+        box-shadow: 0 0 8px gold;
+      }
+
+      #playlist {
+        width: 90%;
+        max-width: 600px;
+        margin: 20px auto;
+        color: white;
+      }
+
+      .playlist-item {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        margin-bottom: 8px;
+        background-color: rgba(255, 255, 255, 0.05);
+        border-radius: 8px;
+        border: 1px solid transparent;
+        cursor: pointer;
+        transition: background-color 0.3s, border-color 0.3s;
+      }
+
+      .playlist-item:hover {
+        background-color: rgba(255, 215, 0, 0.1);
+      }
+
+      .playlist-item.playing {
+        background-color: rgba(255, 215, 0, 0.2);
+        border-color: gold;
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+      }
+
+      .playlist-item-artwork {
+        width: 50px;
+        height: 50px;
+        object-fit: cover;
+        border-radius: 5px;
+        margin-right: 15px;
+      }
+
+      .playlist-item-info {
+        flex-grow: 1;
+      }
+
+      .playlist-item-title {
+        font-size: 1.1em;
+      }
+
+      .playlist-item-artist {
+        font-size: 0.9em;
+        color: #ccc;
+      }
+
+      .playlist-item-download,
+      .playlist-item-youtube {
+        color: gold;
+        font-size: 1.5em;
+        text-decoration: none;
+        margin-left: 20px;
+        transition: text-shadow 0.3s, transform 0.2s;
+      }
+
+      .playlist-item-download:hover,
+      .playlist-item-youtube:hover {
+        text-shadow: 0 0 10px gold;
+        transform: scale(1.1);
+      }
+
+      @media (max-width: 768px) {
+        #track-artwork {
+          width: 100%;
+          height: auto;
+        }
+      }
     </style>
   </head>
   <body>
+    <canvas id="bg"></canvas>
     <h1>Noah's Arcana</h1>
     <h3>Let's create epic music together</h3>
-    <h2>Site in progress</h2>
+    <h2>
+      Welcome to the studio where views become music. Here, every cover of a
+      legendary track is more than a remake—it’s the fuel that powers the next
+      creation. By watching, sharing, and supporting us on Tipeee, you’re
+      catapulting brilliant yet undiscovered artists onto their next virtual
+      stage. So settle in, crank up the volume, and let your curiosity spark the
+      next masterpiece.
+    </h2>
+    <div id="audio-player">
+      <div id="track-info">
+        <img
+          id="track-artwork"
+          src="data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs="
+          alt="Album Art"
+        />
+        <div id="track-title">Select a song</div>
+        <div id="track-artist">...</div>
+      </div>
+      <div id="controls">
+        <button id="prev-btn">⏮</button>
+        <button id="play-pause-btn">▶</button>
+        <button id="next-btn">⏭</button>
+      </div>
+      <div id="progress-container">
+        <div id="progress-bar-bg">
+          <div id="progress-bar"></div>
+        </div>
+      </div>
+      <div id="time-container">
+        <span id="current-time">0:00</span>
+        <span id="duration">0:00</span>
+      </div>
+      <div id="volume-container">
+        <i id="volume-icon"></i>
+        <input
+          type="range"
+          id="volume-slider"
+          min="0"
+          max="1"
+          step="0.01"
+          value="0.8"
+        />
+      </div>
+    </div>
+    <div id="playlist"></div>
+    <script src="script.js" defer></script>
   </body>
 </html>
